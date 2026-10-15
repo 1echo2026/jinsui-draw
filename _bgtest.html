@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#FFF3D6">
+<meta name="robots" content="noindex, nofollow">
+<title>金穗盲盒抽签池</title>
+<style>
+:root{
+  --warm:#FFF3D6;
+  --card:rgba(255,251,235,.85);
+  --card-solid:#FFFBF0;
+  --line:rgba(214,168,92,.55);
+  --gold:#E8C173;
+  --gold-2:#F2DCA6;
+  --gold-deep:#B8862F;
+  --orange:#FF9548;
+  --orange-2:#FFC078;
+  --ink:#584A2E;
+  --ink-2:#8C7A55;
+  --purple-bg:rgba(198,183,253,.30);
+  --purple-line:rgba(167,139,250,.45);
+  --shadow:0 18px 46px rgba(150,110,40,.22);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Helvetica Neue",Arial,sans-serif;
+  color:var(--ink);background:var(--warm);
+  -webkit-font-smoothing:antialiased;
+  -webkit-text-size-adjust:100%;text-size-adjust:100%;
+  overflow-x:hidden;
+}
+button{font-family:inherit;cursor:pointer;touch-action:manipulation}
+[hidden]{display:none!important}
+
+/* ---------- 背景层 ---------- */
+.bg{position:fixed;inset:0;z-index:0;background:var(--warm) center/cover no-repeat;
+  background-image:radial-gradient(120% 90% at 50% 0%,#FFE9B3 0%,#FFD894 30%,#F7C56A 62%,#EAB05A 100%)}
+.bg.has-img{background-image:var(--bgimg);background-size:cover;background-position:center top}
+.veil{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,244,214,.08) 0%,rgba(255,238,199,0) 34%,rgba(110,72,16,.30) 100%)}
+
+/* ---------- 台面 ---------- */
+.wrap{position:relative;z-index:2;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;
+  padding:calc(56px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+  gap:14px}
+.brand{position:fixed;top:calc(12px + env(safe-area-inset-top));left:0;right:0;text-align:center;z-index:2;pointer-events:none;
+  font-size:15px;letter-spacing:.28em;font-weight:800;
+  color:#8A6420;text-shadow:0 0 8px rgba(255,255,255,.85),0 1px 0 rgba(255,255,255,.7)}
+
+/* 结果卡片 / 抽签按钮 */
+.card{position:relative;width:100%;max-width:360px;margin-top:auto;border-radius:22px;
+  background:var(--card);border:1px solid var(--line);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.75);
+  -webkit-backdrop-filter:blur(14px) saturate(1.1);backdrop-filter:blur(14px) saturate(1.1);
+  padding:22px 20px calc(20px + env(safe-area-inset-bottom));text-align:center;
+  transition:transform .18s ease,box-shadow .18s ease}
+.card.clickable{cursor:pointer;user-select:none}
+.card.clickable:active{transform:scale(.985)}
+.card-eyebrow{font-size:12px;letter-spacing:.3em;color:var(--gold-deep);font-weight:700;margin-bottom:12px}
+.card-title{font-size:34px;line-height:1.18;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(180deg,#8C6A24,#C9932F 60%,#E9BE6B);
+  -webkit-background-clip:text;background-clip:text;color:transparent;margin:6px 0 10px}
+.card-sub{font-size:15px;color:var(--ink-2);line-height:1.6}
+.gold-line{height:1px;margin:16px 12px;background:linear-gradient(90deg,transparent,var(--line),transparent)}
+
+/* 抽签光环 + 滚动名字 */
+.halo{position:absolute;left:50%;top:50%;width:230px;height:230px;margin:-115px 0 0 -115px;border-radius:50%;pointer-events:none;opacity:0;transition:opacity .2s}
+.halo.show{opacity:1}
+.halo::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:conic-gradient(from 0deg,rgba(255,255,255,0),rgba(255,213,120,.9),rgba(255,255,255,0) 42%,rgba(255,174,79,.85),rgba(255,255,255,0));
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 7px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 7px),#000 calc(100% - 7px));
+  animation:spin 1.1s linear infinite}
+.halo::after{content:"";position:absolute;inset:12%;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,222,150,.42),rgba(255,222,150,0) 70%)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.rolling{font-size:30px;font-weight:800;color:#B8862F;letter-spacing:.06em;min-height:40px;
+  display:flex;align-items:center;justify-content:center}
+
+/* 中签名单 */
+.win-title{font-size:21px;font-weight:800;letter-spacing:.06em;color:#B37C24;margin:2px 0 4px}
+.win-title small{display:block;font-size:12px;letter-spacing:.28em;color:var(--gold-deep);font-weight:700;margin-top:6px}
+.win-grid{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:16px 0 4px}
+.win-chip{font-size:15px;line-height:1;color:#6C5320;font-weight:700;padding:9px 13px;border-radius:11px;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,240,208,.78));
+  border:1px solid rgba(214,168,92,.6);box-shadow:0 2px 6px rgba(180,130,40,.14);white-space:nowrap}
+.btn-main{margin-top:18px;width:100%;border:none;border-radius:14px;padding:15px 18px;font-size:17px;font-weight:800;letter-spacing:.06em;
+  color:#5A3A10;background:linear-gradient(180deg,var(--orange-2),var(--orange));
+  box-shadow:0 10px 22px rgba(233,140,52,.36),inset 0 1px 0 rgba(255,255,255,.6)}
+.btn-main:active{transform:translateY(1px)}
+.btn-ghost{margin-top:10px;width:100%;border:1px solid var(--line);border-radius:14px;padding:13px 18px;font-size:15px;font-weight:700;
+  color:var(--gold-deep);background:rgba(255,255,255,.5)}
+.tip{font-size:12.5px;color:var(--ink-2);margin-top:14px;line-height:1.6}
+.foot{position:relative;z-index:2;font-size:11.5px;color:rgba(90,67,38,.8);text-align:center;padding:8px 0 4px}
+/* 使用海报背景时：海报自带标题与底部 logo，隐去我方顶部品牌字与页脚，避免文字压字 */
+body.has-bg .brand{display:none}
+body.has-bg .foot{display:none}
+
+/* ---------- 弹层 ---------- */
+.modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(72,50,16,.42);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.panel{width:100%;max-width:330px;border-radius:18px;background:var(--card-solid);border:1px solid var(--line);
+  box-shadow:0 22px 50px rgba(70,46,10,.4);padding:22px 20px;text-align:center}
+.panel h3{margin:0 0 6px;font-size:18px;color:#B37C24;font-weight:800}
+.panel p{margin:0 0 14px;font-size:13px;color:var(--ink-2);line-height:1.6}
+.inp{width:100%;border:1px solid var(--line);background:#fff;border-radius:12px;padding:13px 14px;font-size:16px;color:var(--ink);
+  outline:none;text-align:center;letter-spacing:.06em}
+.inp:focus{border-color:var(--orange)}
+.msg{min-height:18px;font-size:12.5px;color:#C0392B;margin-top:8px}
+.panel .btn-main{margin-top:6px}
+.panel .btn-ghost{margin-top:8px}
+
+/* 保存图弹层 */
+.save-overlay{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(60,42,12,.72);padding:24px;gap:14px}
+.save-overlay img{max-width:88%;max-height:68vh;border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.save-hint{color:#FFF3D6;font-size:14px;text-align:center;line-height:1.6}
+
+/* ---------- 后台 ---------- */
+.admin{position:relative;z-index:2;max-width:900px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom))}
+.admin-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.admin-head h1{margin:0;font-size:20px;color:#B37C24;font-weight:800;letter-spacing:.04em}
+.card-solid{border-radius:16px;background:var(--card-solid);border:1px solid var(--line);box-shadow:0 6px 20px rgba(150,110,40,.14);padding:16px;margin-bottom:14px}
+.card-solid h2{margin:0 0 6px;font-size:15px;color:#A9741F;font-weight:800;display:flex;align-items:center;gap:8px}
+.card-solid h2 span.n{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;
+  background:linear-gradient(180deg,var(--gold-2),var(--gold));color:#7A5510;font-size:12px}
+.card-solid .desc{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:10px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-2);flex:1;min-width:150px}
+.field .inp{text-align:left;font-size:16px;letter-spacing:0}
+textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;resize:vertical;line-height:1.7}
+.btn-sm{border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;color:#5A3A10;
+  background:linear-gradient(180deg,var(--orange-2),var(--orange));box-shadow:0 4px 12px rgba(233,140,52,.3)}
+.btn-sm.plain{background:rgba(255,255,255,.7);border:1px solid var(--line);color:var(--gold-deep);box-shadow:none}
+.btn-sm.danger{background:#fff;border:1px solid rgba(200,80,60,.5);color:#C0392B;box-shadow:none}
+.preview{width:100%;max-width:280px;border-radius:12px;border:1px solid var(--line);background:#fff;margin-top:10px;display:block}
+
+/* 名单区（淡紫磨砂） */
+.pool{border-radius:14px;background:var(--purple-bg);border:1px solid var(--purple-line);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:12px;margin-top:12px}
+.pool-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;color:#5B4A87;margin-bottom:10px}
+.pool-list{display:flex;flex-direction:column;gap:8px;max-height:min(420px,52vh);overflow:auto;-webkit-overflow-scrolling:touch}
+.pitem{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.72);border:1px solid rgba(167,139,250,.35);
+  border-radius:10px;padding:8px 10px}
+.pitem .nm{flex:1;font-size:14.5px;font-weight:700;color:#4A3D6E;word-break:break-all}
+.pitem .w{font-size:13px;color:#6B5AA6;font-weight:700;min-width:46px;text-align:center}
+.step{width:40px;height:40px;border-radius:11px;border:1px solid rgba(167,139,250,.5);background:#fff;color:#6B5AA6;font-size:19px;font-weight:800;line-height:1;touch-action:manipulation}
+.step:active{background:#F1ECFF}
+.pitem .del{border:none;background:transparent;color:#C0392B;font-size:13.5px;font-weight:700;padding:12px 8px;touch-action:manipulation}
+.empty{font-size:13px;color:#7B6BA8;text-align:center;padding:14px 6px}
+
+/* 记录 */
+.rec{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.rec .t{font-size:13px;font-weight:800;color:#A9741F;margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+.rec .names{display:flex;flex-wrap:wrap;gap:6px}
+.rec .names span{font-size:13px;background:rgba(255,240,208,.85);border:1px solid rgba(214,168,92,.5);border-radius:8px;padding:4px 9px;color:#6C5320;font-weight:700}
+.rec .acts{display:flex;gap:8px}
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:80;
+  background:rgba(58,40,10,.9);color:#FFF3D6;font-size:13.5px;padding:11px 18px;border-radius:22px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:88vw;text-align:center}
+.toast.show{opacity:1}
+@media (max-width:430px){
+  .wrap{padding-left:12px;padding-right:12px}
+  .card-solid{padding:14px}
+  .pitem{flex-wrap:wrap;gap:6px}
+  .pitem .nm{flex:1 0 100%}
+  .pitem .del{margin-left:auto}
+  .panel{padding:20px 16px}
+}
+@media (max-width:360px){
+  .card-title{font-size:29px}
+  .win-chip{font-size:14px;padding:8px 11px}
+  .card{padding:18px 15px calc(18px + env(safe-area-inset-bottom))}
+}
+@media (max-height:660px){
+  .wrap{padding-top:calc(38px + env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+
+<!-- 背景层 -->
+<div class="bg" id="bg"></div>
+<div class="veil"></div>
+
+<!-- 前台 -->
+<div class="wrap" id="stageView">
+  <div class="brand">金穗盲盒抽签池</div>
+  <div style="flex:1"></div>
+
+  <!-- 初始卡片（同时是抽签按钮） -->
+  <div class="card clickable" id="cardStart">
+    <div class="halo" id="halo"></div>
+    <div class="card-eyebrow">第<b id="startPeriod">88</b>期</div>
+    <div class="card-title" id="startTitle">准备就绪</div>
+    <div class="card-sub" id="startSub">点击按钮开始抽签</div>
+    <div class="gold-line"></div>
+    <div class="card-sub" style="font-size:13px">一次抽出 <b id="startPer">15</b> 位中签者 · 每人限抽 <b id="startMax">1</b> 次</div>
+  </div>
+
+  <!-- 锁卡 -->
+  <div class="card" id="cardLocked" hidden>
+    <div class="card-eyebrow">第<b id="lockPeriod">88</b>期</div>
+    <div class="card-title">您已参加过抽签</div>
+    <div class="card-sub">感谢参与，敬请期待下一期</div>
+  </div>
+
+  <!-- 结果海报 -->
+  <div class="card" id="cardResult" hidden>
+    <div class="win-title">第<span id="resPeriod">88</span>期金穗盲盒中签名单</div>
+    <div class="gold-line"></div>
+    <div class="win-grid" id="resGrid"></div>
+    <button class="btn-main" id="btnSave">长按保存结果图</button>
+    <div class="tip">手机端长按图片保存到相册，电脑端点击后自动下载</div>
+  </div>
+
+  <div class="foot" id="footNote"></div>
+</div>
+
+<!-- 后台 -->
+<div class="admin" id="adminView" hidden>
+  <div class="admin-head">
+    <h1>金穗盲盒抽签池 · 后台</h1>
+    <button class="btn-sm plain" id="btnLogout">退出登录</button>
+  </div>
+
+  <div class="card-solid">
+    <h2><span class="n">1</span>封面 / 背景图</h2>
+    <div class="desc">上传后作为前台全屏背景（仅本机浏览器生效；如需全员可见，请把图片放到仓库 assets/bg.jpg）。</div>
+    <div class="row">
+      <label class="btn-sm" style="display:inline-block">选择图片<input type="file" id="coverFile" accept="image/*" hidden></label>
+      <button class="btn-sm plain" id="coverClear">恢复默认</button>
+    </div>
+    <img class="preview" id="coverPreview" hidden alt="封面预览">
+  </div>
+
+  <div class="card-solid">
+    <h2><span class="n">2</span>抽签名单管理</h2>
+    <div class="desc">批量粘贴，每行一个：<b>名字:签数</b>（不写签数默认 1）。签数越大中签概率越高；此外可用 + / − 单独调整。</div>
+    <textarea class="inp" id="bulkText" placeholder="张三:3&#10;李四:2&#10;王五"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn-sm" id="btnBulkAdd">批量导入（追加）</button>
+      <button class="btn-sm plain" id="btnBulkReplace">批量导入（覆盖）</button>
+      <button class="btn-sm danger" id="btnClearPool">清空名单</button>
+    </div>
+    <div class="pool">
+      <div class="pool-head"><span>当前奖池名单</span><span>共 <b id="poolCount">0</b> 人 · 总签数 <b id="poolWeight">0</b></span></div>
+      <div class="pool-list" id="poolList"></div>
+    </div>
+  </div>
+
+  <div class="card-solid">
+    <h2><span class="n">3</span>抽签规则</h2>
+    <div class="row">
+      <div class="field">每次抽出人数<input class="inp" id="setPer" type="number" min="1" step="1"></div>
+      <div class="field">每人总抽签次数<input class="inp" id="setMax" type="number" min="1" step="1"></div>
+      <div class="field">抽签口令（可空）<input class="inp" id="setCode" type="text" placeholder="留空则前台直接可抽签"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn-sm" id="btnSaveRules">保存规则</button></div>
+  </div>
+
+  <div class="card-solid">
+    <h2><span class="n">4</span>期数配置</h2>
+    <div class="row">
+      <div class="field">期数数字<input class="inp" id="setPeriod" type="number" min="1" step="1"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn-sm" id="btnSavePeriod">保存期数</button></div>
+  </div>
+
+  <div class="card-solid">
+    <h2><span class="n">5</span>中签记录管理</h2>
+    <div class="desc">记录存在本机浏览器（本机可见）。按操作时间分组，可单条删除 / 导出，或全部清空 / 导出。</div>
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn-sm" id="btnExportAll">导出全部记录（CSV）</button>
+      <button class="btn-sm danger" id="btnClearRecs">清空全部记录</button>
+    </div>
+    <div id="recList"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  try{
+    var sur="赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华";
+    var names=[];
+    for(var i=0;i<30;i++){ names.push({n: sur.charAt(i%sur.length)+"小"+i, w: (i%4)+1}); }
+    localStorage.setItem("jsdraw_cfg_v1", JSON.stringify({period:88, perDraw:15, maxDraws:1, code:"", names:names, cover:""}));
+    localStorage.removeItem("jsdraw_rec_v1"); localStorage.removeItem("jsdraw_used_v1"); localStorage.removeItem("jsdraw_who_v1");
+  }catch(e){}
+})();
+</script><script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============ 常量 ============ */
+  var VER = "v1";
+  var K_CFG = "jsdraw_cfg_" + VER;
+  var K_REC = "jsdraw_rec_" + VER;
+  var K_USED = "jsdraw_used_" + VER;      // 本机已抽次数
+  var K_WHO = "jsdraw_who_" + VER;        // 本机已中签名单（用于锁卡前展示）
+  var K_SESS = "jsdraw_admin_" + VER;     // 登录态（sessionStorage）
+  var ADMIN_PWD = "perfectALL7#";
+  var DEFAULTS = { period:88, perDraw:15, maxDraws:1, code:"", names:[], cover:"" };
+
+  /* ============ 工具 ============ */
+  function $(id){ return document.getElementById(id); }
+  function lsGet(k, fb){ try{ var v = localStorage.getItem(k); return v==null?fb:JSON.parse(v); }catch(e){ return fb; } }
+  function lsSet(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function ssGet(k){ try{ return sessionStorage.getItem(k); }catch(e){ return null; } }
+  function ssSet(k, v){ try{ sessionStorage.setItem(k, v); }catch(e){} }
+  function ssDel(k){ try{ sessionStorage.removeItem(k); }catch(e){} }
+  function pad(n){ return n<10?("0"+n):(""+n); }
+  function fmtTime(ms){
+    var d = new Date(ms);
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+  }
+  function toast(msg){
+    var t = $("toast");
+    if(!t){ t = document.createElement("div"); t.className="toast"; t.id="toast"; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(t._tm); t._tm = setTimeout(function(){ t.classList.remove("show"); }, 1900);
+  }
+  function esc(s){ return String(s).replace(/[&<>"']/g,function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]; }); }
+
+  /* ============ 配置 ============ */
+  var cfg = loadCfg();
+  function loadCfg(){
+    var c = lsGet(K_CFG, null);
+    if(!c || typeof c!=="object"){ c = JSON.parse(JSON.stringify(DEFAULTS)); lsSet(K_CFG, c); return c; }
+    // 补齐字段
+    Object.keys(DEFAULTS).forEach(function(k){ if(c[k]===undefined) c[k]=DEFAULTS[k]; });
+    if(!Array.isArray(c.names)) c.names=[];
+    return c;
+  }
+  function saveCfg(){ lsSet(K_CFG, cfg); }
+
+  /* ============ 加权随机（不放回） ============ */
+  function pickWinners(pool, n){
+    var cand = pool.slice(), res = [], i, k, total, r, idx;
+    for(k=0; k<n && cand.length>0; k++){
+      total = 0;
+      for(i=0;i<cand.length;i++) total += (cand[i].w||1);
+      r = Math.random()*total; idx = 0;
+      for(i=0;i<cand.length;i++){ r -= (cand[i].w||1); if(r<=0){ idx=i; break; } idx=i; }
+      res.push(cand[idx].n);
+      cand.splice(idx,1);
+    }
+    return res;
+  }
+
+  /* ============ 路由 ============ */
+  function route(){
+    var h = location.hash || "";
+    if(h.indexOf("#/admin")===0){ showAdminEntry(); }
+    else{
+      if(h!=="#/stage"){ try{ history.replaceState(null,"","#/stage"); }catch(e){ location.hash="#/stage"; } }
+      showStage();
+    }
+  }
+  window.addEventListener("hashchange", route);
+
+  function showStage(){
+    $("adminView").hidden = true;
+    $("stageView").hidden = false;
+    applyBg();
+    renderStageState();
+  }
+
+  function showAdminEntry(){
+    $("stageView").hidden = true;
+    if(ssGet(K_SESS)==="1"){ renderAdmin(); $("adminView").hidden = false; return; }
+    $("adminView").hidden = true;
+    askAdminPwd();
+  }
+
+  /* ============ 后台密码 ============ */
+  function askAdminPwd(){
+    openModal({
+      title:"请输入后台密码",
+      desc:"该页面仅供管理员使用",
+      input:true, inputType:"password", placeholder:"后台密码",
+      okText:"进入后台",
+      onOk:function(val, close, showMsg){
+        if(val===ADMIN_PWD){ ssSet(K_SESS,"1"); close(); renderAdmin(); $("adminView").hidden=false; }
+        else{ showMsg("密码错误，请重试"); }
+        return false; // 保持打开直到正确
+      }
+    });
+  }
+
+  function openModal(opt){
+    var mask = document.createElement("div"); mask.className="modal";
+    mask.innerHTML =
+      '<div class="panel">'+
+        '<h3>'+esc(opt.title||"")+'</h3>'+
+        (opt.desc?'<p>'+esc(opt.desc)+'</p>':'')+
+        (opt.input?'<input class="inp" id="mInp" type="'+(opt.inputType||"text")+'" placeholder="'+esc(opt.placeholder||"")+'" autocomplete="off">':'')+
+        '<div class="msg" id="mMsg"></div>'+
+        '<button class="btn-main" id="mOk">'+esc(opt.okText||"确定")+'</button>'+
+        (opt.onCancel===false?'':'<button class="btn-ghost" id="mCancel">'+(opt.cancelText||"取消")+'</button>')+
+      '</div>';
+    document.body.appendChild(mask);
+    var inp = $("mInp"), msg = $("mMsg");
+    function close(){ if(mask.parentNode) mask.parentNode.removeChild(mask); document.removeEventListener("keydown", onKey); }
+    function showMsg(s){ msg.textContent = s; }
+    $("mOk").onclick = function(){
+      var v = inp ? inp.value : "";
+      if(opt.onOk){ var keep = opt.onOk(v, close, showMsg); if(keep===true) return; }
+      else close();
+    };
+    var btnCancel = $("mCancel");
+    if(btnCancel) btnCancel.onclick = function(){ close(); if(opt.onCancelTab) opt.onCancelTab(); else location.hash="#/stage"; };
+    function onKey(e){ if(e.key==="Enter" && inp){ $("mOk").click(); } if(e.key==="Escape"){ close(); if(!opt.onCancelTab) location.hash="#/stage"; } }
+    document.addEventListener("keydown", onKey);
+    if(inp) setTimeout(function(){ inp.focus(); }, 60);
+  }
+
+  /* ============ 背景 ============ */
+  function setBgImg(url){
+    var bg = $("bg");
+    bg.style.setProperty("--bgimg", 'url("'+url+'")');
+    bg.classList.add("has-img");
+    document.body.classList.add("has-bg");
+  }
+  function clearBgImg(){
+    var bg = $("bg");
+    bg.classList.remove("has-img");
+    bg.style.removeProperty("--bgimg");
+    document.body.classList.remove("has-bg");
+  }
+  function applyBg(){
+    // 1) 本机后台上传 2) 仓库 assets/bg.jpg（全员可见） 3) 暖黄渐变兜底
+    if(cfg.cover){ setBgImg(cfg.cover); return; }
+    clearBgImg();
+    var probe = new Image();
+    probe.onload = function(){ setBgImg("assets/bg.jpg"); };
+    probe.onerror = function(){ clearBgImg(); };
+    probe.src = "assets/bg.jpg?t=" + Date.now();
+  }
+
+  /* ============ 前台状态 ============ */
+  function usedCount(){ return lsGet(K_USED, 0) || 0; }
+
+  function renderStageState(){
+    $("startPeriod").textContent = cfg.period;
+    $("startPer").textContent = cfg.perDraw;
+    $("startMax").textContent = cfg.maxDraws;
+    $("lockPeriod").textContent = cfg.period;
+    $("startTitle").textContent = "准备就绪";
+    $("startSub").textContent = "点击按钮开始抽签";
+    $("cardResult").hidden = true;
+    $("footNote").textContent = "仅前台，无后台入口 · 每人限抽 " + cfg.maxDraws + " 次";
+
+    var used = usedCount();
+    if(cfg.names.length===0){
+      $("cardStart").hidden = true;
+      $("cardLocked").hidden = false;
+      $("cardLocked").querySelector(".card-title").textContent = "奖池尚未配置";
+      $("cardLocked").querySelector(".card-sub").textContent = "请联系管理员在后台导入抽签名单";
+      return;
+    }
+    if(used >= cfg.maxDraws){
+      $("cardStart").hidden = true;
+      $("cardLocked").hidden = false;
+      $("cardLocked").querySelector(".card-title").textContent = "您已参加过抽签";
+      $("cardLocked").querySelector(".card-sub").textContent = "感谢参与，敬请期待下一期";
+      return;
+    }
+    $("cardLocked").hidden = true;
+    $("cardStart").hidden = false;
+    // 还原初始标题
+    $("cardStart").querySelector(".card-title").textContent = "准备就绪";
+  }
+
+  var spinning = false;
+  function onStartClick(){
+    if(spinning) return;
+    if(cfg.names.length===0) return;
+
+    // 口令校验
+    if(cfg.code){
+      if(ssGet("jsdraw_pass_"+VER) !== cfg.code){
+        openModal({
+          title:"请输入抽签口令",
+          desc:"输入正确口令即可解锁抽签",
+          input:true, placeholder:"抽签口令", okText:"解锁",
+          onOk:function(val, close, showMsg){
+            if(val===cfg.code){ ssSet("jsdraw_pass_"+VER, val); close(); toast("口令正确，可以抽签了"); }
+            else{ showMsg("口令错误，请重试"); }
+            return false;
+          }
+        });
+        return;
+      }
+    }
+    startSpin();
+  }
+
+  function startSpin(){
+    spinning = true;
+    $("cardStart").classList.remove("clickable");
+    var halo = $("halo"); halo.classList.add("show");
+    var titleEl = $("cardStart").querySelector(".card-title");
+    var subEl = $("cardStart").querySelector(".card-sub");
+    var eyebrow = $("cardStart").querySelector(".card-eyebrow");
+    var rollLine = document.createElement("div"); rollLine.className="rolling"; rollLine.id="rollLine";
+    titleEl.style.display="none"; subEl.style.display="none";
+    $("cardStart").insertBefore(rollLine, $("cardStart").querySelector(".gold-line"));
+
+    var pool = cfg.names;
+    var timer = setInterval(function(){
+      rollLine.textContent = pool[Math.floor(Math.random()*pool.length)].n;
+    }, 70);
+
+    // 定格
+    var dur = 2400 + Math.floor(Math.random()*500);
+    setTimeout(function(){
+      clearInterval(timer);
+      var winners = pickWinners(pool, Math.min(cfg.perDraw, pool.length));
+      // 记录 + 计数
+      var recs = lsGet(K_REC, []) || [];
+      var t = Date.now();
+      recs.unshift({ t:t, ts:fmtTime(t), names:winners, pool:pool.length });
+      lsSet(K_REC, recs);
+      lsSet(K_USED, usedCount()+1);
+
+      // 切到结果卡
+      spinning = false;
+      halo.classList.remove("show");
+      titleEl.style.display=""; subEl.style.display="";
+      if(rollLine.parentNode) rollLine.parentNode.removeChild(rollLine);
+      showResult(winners);
+    }, dur);
+  }
+
+  function showResult(winners){
+    $("cardStart").hidden = true;
+    var card = $("cardResult"); card.hidden = false;
+    $("resPeriod").textContent = cfg.period;
+    var g = $("resGrid"); g.innerHTML = "";
+    winners.forEach(function(n){
+      var chip = document.createElement("span"); chip.className="win-chip"; chip.textContent = n; g.appendChild(chip);
+    });
+    card._winners = winners;
+    $("footNote").textContent = "长按保存这张中签海报，发到群里吧";
+  }
+
+  /* ============ 保存海报 ============ */
+  function savePoster(){
+    var card = $("cardResult");
+    var btn = $("btnSave");
+    if(typeof html2canvas !== "function"){ toast("截图组件未加载，请检查网络后重试"); return; }
+    btn.textContent = "正在生成…"; btn.disabled = true;
+    card.classList.add("exporting");
+    var prevBg = card.style.background;
+    card.style.background = "#FFFBF0";        // 导出用不透明底，保证清晰
+    html2canvas(card, { backgroundColor:"#FFFBF0", scale: Math.max(2, window.devicePixelRatio||2), useCORS:true, logging:false }).then(function(canvas){
+      card.style.background = prevBg; card.classList.remove("exporting");
+      btn.textContent = "长按保存结果图"; btn.disabled = false;
+      var url = canvas.toDataURL("image/png");
+      // 电脑端直接下载
+      try{
+        var a = document.createElement("a"); a.href=url; a.download = "第"+cfg.period+"期金穗盲盒中签名单.png";
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }catch(e){}
+      // 弹层展示（手机可长按保存）
+      var ov = document.createElement("div"); ov.className="save-overlay";
+      ov.innerHTML = '<img alt="中签海报"><div class="save-hint">长按图片 → 保存到相册<br>（电脑端已自动下载）</div><button class="btn-sm plain" id="ovClose">关闭</button>';
+      ov.querySelector("img").src = url;
+      document.body.appendChild(ov);
+      ov.querySelector("#ovClose").onclick = function(){ document.body.removeChild(ov); };
+      ov.onclick = function(e){ if(e.target===ov) document.body.removeChild(ov); };
+    }).catch(function(err){
+      card.style.background = prevBg; card.classList.remove("exporting");
+      btn.textContent = "长按保存结果图"; btn.disabled = false;
+      toast("生成失败：" + (err && err.message ? err.message : "未知错误"));
+    });
+  }
+
+  /* ============ 后台渲染 ============ */
+  function renderAdmin(){
+    // 封面预览
+    var pv = $("coverPreview");
+    if(cfg.cover){ pv.src = cfg.cover; pv.hidden=false; } else { pv.hidden = true; pv.removeAttribute("src"); }
+    // 规则
+    $("setPer").value = cfg.perDraw;
+    $("setMax").value = cfg.maxDraws;
+    $("setCode").value = cfg.code || "";
+    $("setPeriod").value = cfg.period;
+    renderPool();
+    renderRecs();
+  }
+
+  function renderPool(){
+    var list = $("poolList"); list.innerHTML = "";
+    var totalW = 0;
+    if(cfg.names.length===0){
+      list.innerHTML = '<div class="empty">暂无名单，请在上方批量导入</div>';
+    } else {
+      cfg.names.forEach(function(p, i){
+        totalW += (p.w||1);
+        var row = document.createElement("div"); row.className="pitem";
+        row.innerHTML = '<div class="nm">'+esc(p.n)+'</div>'+
+          '<button class="step" data-a="dec" data-i="'+i+'">−</button>'+
+          '<div class="w">签数 '+ (p.w||1) +'</div>'+
+          '<button class="step" data-a="inc" data-i="'+i+'">+</button>'+
+          '<button class="del" data-a="del" data-i="'+i+'">删除</button>';
+        list.appendChild(row);
+      });
+    }
+    $("poolCount").textContent = cfg.names.length;
+    $("poolWeight").textContent = totalW;
+  }
+
+  function renderRecs(){
+    var box = $("recList"); box.innerHTML = "";
+    var recs = lsGet(K_REC, []) || [];
+    if(recs.length===0){ box.innerHTML = '<div class="empty" style="color:#8C7A55">暂无抽签记录</div>'; return; }
+    recs.forEach(function(r, i){
+      var d = document.createElement("div"); d.className="rec";
+      var names = (r.names||[]).map(function(n){ return '<span>'+esc(n)+'</span>'; }).join("");
+      d.innerHTML = '<div class="t"><span>🕘 '+esc(r.ts||fmtTime(r.t||Date.now()))+' · 共 '+(r.names||[]).length+' 人</span>'+
+        '<span class="acts"><button class="btn-sm plain" data-a="exp" data-i="'+i+'">导出</button>'+
+        '<button class="btn-sm danger" data-a="del" data-i="'+i+'">删除</button></span></div>'+
+        '<div class="names">'+names+'</div>';
+      box.appendChild(d);
+    });
+  }
+
+  /* ============ CSV ============ */
+  function csvCell(v){ v = (v==null?"":String(v)); return '"' + v.replace(/"/g,'""') + '"'; }
+  function downloadCSV(filename, rows){
+    var csv = "\uFEFF" + rows.map(function(r){ return r.map(csvCell).join(","); }).join("\r\n");
+    var blob = new Blob([csv], {type:"text/csv;charset=utf-8"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  }
+  function exportOne(r){
+    var rows = [["操作时间","序号","中奖姓名"]];
+    (r.names||[]).forEach(function(n, i){ rows.push([r.ts||fmtTime(r.t), i+1, n]); });
+    downloadCSV("第"+cfg.period+"期中签记录_"+String(r.ts||"").replace(/[: ]/g,"-")+".csv", rows);
+  }
+  function exportAll(){
+    var recs = lsGet(K_REC, []) || [];
+    if(recs.length===0){ toast("暂无记录可导出"); return; }
+    var rows = [["操作时间","序号","中奖姓名"]];
+    recs.forEach(function(r){ (r.names||[]).forEach(function(n, i){ rows.push([r.ts||fmtTime(r.t), i+1, n]); }); });
+    downloadCSV("第"+cfg.period+"期中签记录_全部.csv", rows);
+  }
+
+  /* ============ 名单导入 ============ */
+  function parseBulk(text){
+    var out = [], lines = String(text||"").split(/\r?\n/);
+    lines.forEach(function(line){
+      line = line.trim(); if(!line) return;
+      // 支持 名字:签数 或 名字 制表符 签数 或 名字 空格 签数
+      var m = line.match(/^(.*?)[\s:：,，\t]+(\d+)\s*$/);
+      var name, w;
+      if(m && m[1].trim()){ name = m[1].trim(); w = parseInt(m[2],10)||1; }
+      else { name = line.replace(/[\s:：,，\t]+\d+\s*$/,"").trim() || line.trim(); w = 1; }
+      if(!name) return;
+      if(w<1) w=1;
+      out.push({ n:name, w:w });
+    });
+    return out;
+  }
+
+  /* ============ 事件绑定 ============ */
+  // 前台：仅卡片可点击触发
+  $("cardStart").addEventListener("click", onStartClick);
+  $("btnSave").addEventListener("click", function(e){ e.stopPropagation(); savePoster(); });
+
+  // 后台
+  $("btnLogout").addEventListener("click", function(){ ssDel(K_SESS); location.hash="#/stage"; });
+
+  $("coverFile").addEventListener("change", function(e){
+    var f = e.target.files && e.target.files[0]; if(!f) return;
+    var fr = new FileReader();
+    fr.onload = function(){ cfg.cover = fr.result; saveCfg(); renderAdmin(); toast("封面已更新（仅本机可见）"); };
+    fr.readAsDataURL(f);
+    e.target.value = "";
+  });
+  $("coverClear").addEventListener("click", function(){ cfg.cover=""; saveCfg(); renderAdmin(); toast("已恢复默认背景"); });
+
+  $("btnBulkAdd").addEventListener("click", function(){
+    var add = parseBulk($("bulkText").value);
+    if(add.length===0){ toast("没有解析到有效名单"); return; }
+    cfg.names = cfg.names.concat(add); saveCfg(); renderPool();
+    $("bulkText").value=""; toast("已追加 "+add.length+" 人");
+  });
+  $("btnBulkReplace").addEventListener("click", function(){
+    var add = parseBulk($("bulkText").value);
+    if(add.length===0){ toast("没有解析到有效名单"); return; }
+    cfg.names = add; saveCfg(); renderPool();
+    $("bulkText").value=""; toast("已覆盖为 "+add.length+" 人");
+  });
+  $("btnClearPool").addEventListener("click", function(){
+    openModal({ title:"清空名单？", desc:"将删除后台全部 "+cfg.names.length+" 人，不可恢复。", okText:"确认清空",
+      onOk:function(v,close){ cfg.names=[]; saveCfg(); renderPool(); close(); toast("名单已清空"); } });
+  });
+
+  $("poolList").addEventListener("click", function(e){
+    var btn = e.target.closest("button"); if(!btn) return;
+    var i = parseInt(btn.getAttribute("data-i"),10); var a = btn.getAttribute("data-a");
+    if(isNaN(i) || !cfg.names[i]) return;
+    if(a==="inc") cfg.names[i].w = (cfg.names[i].w||1) + 1;
+    else if(a==="dec") cfg.names[i].w = Math.max(1,(cfg.names[i].w||1) - 1);
+    else if(a==="del") cfg.names.splice(i,1);
+    saveCfg(); renderPool();
+  });
+
+  $("btnSaveRules").addEventListener("click", function(){
+    var per = parseInt($("setPer").value,10); if(!per || per<1) per=1;
+    var mx = parseInt($("setMax").value,10); if(!mx || mx<1) mx=1;
+    cfg.perDraw = per; cfg.maxDraws = mx; cfg.code = $("setCode").value.trim();
+    saveCfg(); renderStageState(); toast("规则已保存");
+  });
+  $("btnSavePeriod").addEventListener("click", function(){
+    var p = parseInt($("setPeriod").value,10); if(!p || p<1) p=1;
+    cfg.period = p; saveCfg(); renderStageState(); toast("期数已保存为第 "+p+" 期");
+  });
+
+  $("btnExportAll").addEventListener("click", exportAll);
+  $("btnClearRecs").addEventListener("click", function(){
+    openModal({ title:"清空全部记录？", desc:"本机所有抽签记录将被删除，不可恢复。", okText:"确认清空",
+      onOk:function(v,close){ lsSet(K_REC, []); renderRecs(); close(); toast("记录已清空"); } });
+  });
+  $("recList").addEventListener("click", function(e){
+    var btn = e.target.closest("button"); if(!btn) return;
+    var i = parseInt(btn.getAttribute("data-i"),10); var a = btn.getAttribute("data-a");
+    var recs = lsGet(K_REC, []) || []; if(!recs[i]) return;
+    if(a==="exp") exportOne(recs[i]);
+    else if(a==="del"){
+      var r = recs[i];
+      openModal({ title:"删除这条记录？", desc:(r.ts||"")+"（"+(r.names||[]).length+" 人）", okText:"确认删除",
+        onOk:function(v,close){ recs.splice(i,1); lsSet(K_REC, recs); renderRecs(); close(); toast("已删除"); } });
+    }
+  });
+
+  // 阻止空白处触发（前台）：wrap 空白点击无效，仅卡片生效
+
+  /* ============ 启动 ============ */
+  renderStageState();
+  route();
+  // 保证默认永远前台：若无 hash 则写入 #/stage
+  if(!location.hash){ try{ history.replaceState(null,"","#/stage"); }catch(e){} }
+})();
+</script>
+<script>
+window.addEventListener("load", function(){
+  function wait(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+  function cap(el){
+    return window.html2canvas(el, {backgroundColor:"#FFFBF0", scale: Math.max(2, window.devicePixelRatio||2), useCORS:true, logging:false})
+      .then(function(c){ return "OK("+c.width+"x"+c.height+")"; }, function(e){ return "FAIL["+(e&&e.message?e.message:"?")+"]"; });
+  }
+  var res=[];
+  wait(500).then(function(){ document.getElementById("cardStart").click(); return wait(4500); })
+  .then(function(){
+    var cr=document.getElementById("cardResult");
+    res.push("chips="+document.querySelectorAll("#resGrid .win-chip").length);
+    res.push("dpr="+window.devicePixelRatio+" innerW="+window.innerWidth+" innerH="+window.innerHeight);
+    return cap(cr).then(function(r){ res.push("A_asis="+r); });
+  })
+  .then(function(){
+    var gl=document.querySelector("#cardResult .gold-line");
+    if(gl){ res.push("goldLineBox="+JSON.stringify(gl.getBoundingClientRect())); gl.style.display="none"; }
+    return cap(document.getElementById("cardResult")).then(function(r){ res.push("B_noGold="+r); });
+  })
+  .then(function(){
+    var gl=document.querySelector("#cardResult .gold-line"); if(gl) gl.style.display="";
+    var all=document.querySelectorAll("#cardResult, #cardResult *");
+    for(var i=0;i<all.length;i++){ all[i].style.backgroundImage="none"; }
+    return cap(document.getElementById("cardResult")).then(function(r){ res.push("C_noGrad="+r); });
+  })
+  .then(function(){ document.title="R|"+res.join(" | "); }, function(e){ document.title="R|PROMISE_ERR "+e; });
+});
+</script></body>
+</html>
