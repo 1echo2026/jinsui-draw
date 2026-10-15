@@ -145,6 +145,11 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
 .btn-sm.danger{background:#fff;border:1px solid rgba(200,80,60,.5);color:#C0392B;box-shadow:none}
 .preview{width:100%;max-width:280px;border-radius:12px;border:1px solid var(--line);background:#fff;margin-top:10px;display:block}
 
+/* 保存并生效（置顶主操作） */
+.save-bar{border-color:rgba(255,149,72,.55);background:#FFF6E8}
+.save-bar h2{color:#B37C24}
+.btn-save-all{font-size:15px;padding:13px 22px;border-radius:12px}
+
 /* 名单区（淡紫磨砂） */
 .pool{border-radius:14px;background:var(--purple-bg);border:1px solid var(--purple-line);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:12px;margin-top:12px}
@@ -231,6 +236,16 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   <div class="admin-head">
     <h1>金穗盲盒抽签池 · 后台</h1>
     <button class="btn-sm plain" id="btnLogout">退出登录</button>
+  </div>
+
+  <!-- 保存并生效：一次性保存全部设置，并让前台可以立即抽签 -->
+  <div class="card-solid save-bar">
+    <h2>保存并生效</h2>
+    <div class="desc">把当前的「名单 · 规则 · 期数 · 背景」一次性保存，并重置本机已抽次数；保存后打开前台即可抽签（仅本机浏览器生效，其他设备请把名单同步到该设备后台）。</div>
+    <div class="row">
+      <button class="btn-sm btn-save-all" id="btnSaveAll">保存全部设置并生效</button>
+      <button class="btn-sm plain" id="btnGotoStage">去前台抽签</button>
+    </div>
   </div>
 
   <div class="card-solid">
@@ -674,6 +689,16 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
 
   // 后台
   $("btnLogout").addEventListener("click", function(){ ssDel(K_SESS); location.hash="#/stage"; });
+
+  // 保存并生效：一次性保存全部设置，并重置本机已抽次数，之后前台即可抽签
+  $("btnSaveAll").addEventListener("click", function(){
+    saveCfg();
+    lsSet(K_USED, 0);          // 重置本机已抽次数
+    lsSet(K_WHO, []);          // 清空本机中签缓存
+    renderStageState();
+    toast(cfg.names.length ? "设置已保存，前台可抽签" : "设置已保存，但奖池为空，请先导入名单");
+  });
+  $("btnGotoStage").addEventListener("click", function(){ location.hash = "#/stage"; });
 
   $("coverFile").addEventListener("change", function(e){
     var f = e.target.files && e.target.files[0]; if(!f) return;
