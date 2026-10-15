@@ -38,9 +38,9 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 /* ---------- 背景层 ---------- */
 .bg{position:fixed;inset:0;z-index:0;background:var(--warm) center/cover no-repeat;
   background-image:radial-gradient(120% 90% at 50% 0%,#FFE9B3 0%,#FFD894 30%,#F7C56A 62%,#EAB05A 100%)}
-.bg.has-img{background-image:var(--bgimg);background-size:cover;background-position:center}
+.bg.has-img{background-image:var(--bgimg);background-size:cover;background-position:center top}
 .veil{position:fixed;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,rgba(255,244,214,.30) 0%,rgba(255,238,199,.10) 40%,rgba(120,80,20,.28) 100%)}
+  background:linear-gradient(180deg,rgba(255,244,214,.08) 0%,rgba(255,238,199,0) 34%,rgba(110,72,16,.30) 100%)}
 
 /* ---------- 台面 ---------- */
 .wrap{position:relative;z-index:2;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;
@@ -95,6 +95,9 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
   color:var(--gold-deep);background:rgba(255,255,255,.5)}
 .tip{font-size:12.5px;color:var(--ink-2);margin-top:14px;line-height:1.6}
 .foot{position:relative;z-index:2;font-size:11.5px;color:rgba(90,67,38,.8);text-align:center;padding:8px 0 4px}
+/* 使用海报背景时：海报自带标题与底部 logo，隐去我方顶部品牌字与页脚，避免文字压字 */
+body.has-bg .brand{display:none}
+body.has-bg .foot{display:none}
 
 /* ---------- 弹层 ---------- */
 .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;
@@ -406,24 +409,26 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   }
 
   /* ============ 背景 ============ */
-  function applyBg(){
+  function setBgImg(url){
     var bg = $("bg");
-    var url = null;
-    // 1) 优先仓库 assets/bg.jpg（全员可见）
-    // 2) 本机后台上传
-    if(cfg.cover) url = cfg.cover;
-    if(url){
-      bg.style.setProperty("--bgimg", 'url("'+url+'")');
-      bg.classList.add("has-img");
-    } else {
-      bg.classList.remove("has-img");
-      bg.style.removeProperty("--bgimg");
-      // 探测仓库默认背景
-      var probe = new Image();
-      probe.onload = function(){ bg.style.setProperty("--bgimg", 'url("assets/bg.jpg")'); bg.classList.add("has-img"); };
-      probe.onerror = function(){};
-      probe.src = "assets/bg.jpg?t=" + Date.now();
-    }
+    bg.style.setProperty("--bgimg", 'url("'+url+'")');
+    bg.classList.add("has-img");
+    document.body.classList.add("has-bg");
+  }
+  function clearBgImg(){
+    var bg = $("bg");
+    bg.classList.remove("has-img");
+    bg.style.removeProperty("--bgimg");
+    document.body.classList.remove("has-bg");
+  }
+  function applyBg(){
+    // 1) 本机后台上传 2) 仓库 assets/bg.jpg（全员可见） 3) 暖黄渐变兜底
+    if(cfg.cover){ setBgImg(cfg.cover); return; }
+    clearBgImg();
+    var probe = new Image();
+    probe.onload = function(){ setBgImg("assets/bg.jpg"); };
+    probe.onerror = function(){ clearBgImg(); };
+    probe.src = "assets/bg.jpg?t=" + Date.now();
   }
 
   /* ============ 前台状态 ============ */
