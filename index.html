@@ -99,6 +99,13 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 body.has-bg .brand{display:none}
 body.has-bg .foot{display:none}
 
+/* 导出海报时扁平化渐变：html2canvas 会把 CSS 渐变栅格化成离屏 canvas，
+   一旦某个渐变元素的盒子被算成亚像素尺寸，Chrome 会抛 createPattern 报错（本次生成失败即此因），
+   导出阶段统一改用纯色，彻底绕开该代码路径 */
+.card.exporting .gold-line{background:rgba(214,168,92,.55)}
+.card.exporting .win-chip{background:#FFF8E9}
+.card.exporting .btn-main{background:#FFAE5E}
+
 /* ---------- 弹层 ---------- */
 .modal{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;
   background:rgba(72,50,16,.42);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
