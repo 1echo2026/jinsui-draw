@@ -150,6 +150,22 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
 .save-bar h2{color:#B37C24}
 .btn-save-all{font-size:15px;padding:13px 22px;border-radius:12px}
 
+/* ---------- 结果海报（可上传底图 + 固定位置二维码） ---------- */
+#cardResult{margin-top:auto;width:100%;max-width:360px}
+#resPoster{width:100%}
+.poster-base{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:0;display:block}
+#resPoster.poster-mode{padding:0;border:none;box-shadow:none;background:transparent;background-image:none;overflow:hidden;
+  -webkit-backdrop-filter:none;backdrop-filter:none;aspect-ratio:var(--p-ratio,3 / 5.33)}
+#resPoster.poster-mode .win-title,#resPoster.poster-mode .gold-line{display:none}
+#resPoster.poster-mode .win-grid{position:absolute;left:0;right:0;top:var(--names-top,62%);margin:0;z-index:2;padding:0 12px}
+#resPoster.poster-mode .win-chip{background:rgba(255,251,240,.94);border-color:rgba(214,168,92,.75)}
+.poster-qr{position:absolute;width:var(--qr-size,22%);height:auto;z-index:3;display:block;
+  background:#fff;border-radius:8px;padding:3px;box-shadow:0 4px 14px rgba(80,50,10,.18)}
+.poster-qr.pos-br{right:var(--qr-margin,4%);bottom:var(--qr-margin,4%)}
+.poster-qr.pos-bl{left:var(--qr-margin,4%);bottom:var(--qr-margin,4%)}
+.poster-qr.pos-tr{right:var(--qr-margin,4%);top:var(--qr-margin,4%)}
+.poster-qr.pos-tl{left:var(--qr-margin,4%);top:var(--qr-margin,4%)}
+
 /* 名单区（淡紫磨砂） */
 .pool{border-radius:14px;background:var(--purple-bg);border:1px solid var(--purple-line);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding:12px;margin-top:12px}
@@ -219,11 +235,15 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
     <div class="card-sub">感谢参与，敬请期待下一期</div>
   </div>
 
-  <!-- 结果海报 -->
-  <div class="card" id="cardResult" hidden>
-    <div class="win-title">第<span id="resPeriod">88</span>期金穗盲盒中签名单</div>
-    <div class="gold-line"></div>
-    <div class="win-grid" id="resGrid"></div>
+  <!-- 结果海报（导出主体为 #resPoster：上传底图 + 中签名单 + 固定位置二维码） -->
+  <div id="cardResult" hidden>
+    <div class="card" id="resPoster">
+      <img class="poster-base" id="posterBase" hidden alt="">
+      <div class="win-title">第<span id="resPeriod">88</span>期金穗盲盒中签名单</div>
+      <div class="gold-line"></div>
+      <div class="win-grid" id="resGrid"></div>
+      <img class="poster-qr pos-br" id="posterQr" hidden alt="二维码">
+    </div>
     <button class="btn-main" id="btnSave">长按保存结果图</button>
     <div class="tip">手机端长按图片保存到相册，电脑端点击后自动下载</div>
   </div>
@@ -259,7 +279,36 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   </div>
 
   <div class="card-solid">
-    <h2><span class="n">2</span>抽签名单管理</h2>
+    <h2><span class="n">2</span>结果海报 / 二维码</h2>
+    <div class="desc">上传本期海报底图，中签名单会叠在海报上，二维码固定贴在所选位置。<b>海报按期数保存，换期就换图</b>（仅本机浏览器生效）。</div>
+    <div class="row">
+      <label class="btn-sm" style="display:inline-block">上传本期海报<input type="file" id="posterFile" accept="image/*" hidden></label>
+      <button class="btn-sm plain" id="posterClear">清除本期海报</button>
+    </div>
+    <img class="preview" id="posterPreview" hidden alt="海报预览">
+    <div class="desc" style="margin:10px 0 6px">当前期数：第 <b id="posterPeriod">88</b> 期 · <span id="posterState"></span></div>
+    <div class="row">
+      <label class="btn-sm" style="display:inline-block">上传二维码<input type="file" id="qrFile" accept="image/*" hidden></label>
+      <button class="btn-sm plain" id="qrClear">清除二维码</button>
+    </div>
+    <img class="preview" id="qrPreview" hidden style="max-width:150px" alt="二维码预览">
+    <div class="row" style="margin-top:12px">
+      <div class="field">二维码位置
+        <select class="inp" id="setQrPos">
+          <option value="br">右下角</option>
+          <option value="bl">左下角</option>
+          <option value="tr">右上角</option>
+          <option value="tl">左上角</option>
+        </select>
+      </div>
+      <div class="field">二维码大小（占海报宽 %）<input class="inp" id="setQrSize" type="number" min="5" max="60" step="1"></div>
+      <div class="field">名单区距顶部（%）<input class="inp" id="setNamesTop" type="number" min="0" max="96" step="1"></div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn-sm" id="btnSavePoster">保存海报设置</button></div>
+  </div>
+
+  <div class="card-solid">
+    <h2><span class="n">3</span>抽签名单管理</h2>
     <div class="desc">批量粘贴，每行一个：<b>名字:签数</b>（不写签数默认 1）。签数越大中签概率越高；此外可用 + / − 单独调整。</div>
     <textarea class="inp" id="bulkText" placeholder="张三:3&#10;李四:2&#10;王五"></textarea>
     <div class="row" style="margin-top:10px">
@@ -274,7 +323,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   </div>
 
   <div class="card-solid">
-    <h2><span class="n">3</span>抽签规则</h2>
+    <h2><span class="n">4</span>抽签规则</h2>
     <div class="row">
       <div class="field">每次抽出人数<input class="inp" id="setPer" type="number" min="1" step="1"></div>
       <div class="field">每人总抽签次数<input class="inp" id="setMax" type="number" min="1" step="1"></div>
@@ -284,7 +333,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   </div>
 
   <div class="card-solid">
-    <h2><span class="n">4</span>期数配置</h2>
+    <h2><span class="n">5</span>期数配置</h2>
     <div class="row">
       <div class="field">期数数字<input class="inp" id="setPeriod" type="number" min="1" step="1"></div>
     </div>
@@ -292,7 +341,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   </div>
 
   <div class="card-solid">
-    <h2><span class="n">5</span>中签记录管理</h2>
+    <h2><span class="n">6</span>中签记录管理</h2>
     <div class="desc">记录存在本机浏览器（本机可见）。按操作时间分组，可单条删除 / 导出，或全部清空 / 导出。</div>
     <div class="row" style="margin-bottom:12px">
       <button class="btn-sm" id="btnExportAll">导出全部记录（CSV）</button>
@@ -315,7 +364,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   var K_WHO = "jsdraw_who_" + VER;        // 本机已中签名单（用于锁卡前展示）
   var K_SESS = "jsdraw_admin_" + VER;     // 登录态（sessionStorage）
   var ADMIN_PWD = "perfectALL7#";
-  var DEFAULTS = { period:88, perDraw:15, maxDraws:1, code:"", names:[], cover:"" };
+  var DEFAULTS = { period:88, perDraw:15, maxDraws:1, code:"", names:[], cover:"", posters:null, qr:"", qrPos:"br", qrSize:22, namesTop:62 };
 
   /* ============ 工具 ============ */
   function $(id){ return document.getElementById(id); }
@@ -345,6 +394,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
     // 补齐字段
     Object.keys(DEFAULTS).forEach(function(k){ if(c[k]===undefined) c[k]=DEFAULTS[k]; });
     if(!Array.isArray(c.names)) c.names=[];
+    if(!c.posters || typeof c.posters!=="object") c.posters = {};   // 按期数存放的海报底图
     return c;
   }
   function saveCfg(){ lsSet(K_CFG, cfg); }
@@ -550,26 +600,61 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
 
   function showResult(winners){
     $("cardStart").hidden = true;
-    var card = $("cardResult"); card.hidden = false;
+    var wrap = $("cardResult"); wrap.hidden = false;
     $("resPeriod").textContent = cfg.period;
     var g = $("resGrid"); g.innerHTML = "";
     winners.forEach(function(n){
       var chip = document.createElement("span"); chip.className="win-chip"; chip.textContent = n; g.appendChild(chip);
     });
-    card._winners = winners;
+    wrap._winners = winners;
+    applyPoster();
     $("footNote").textContent = "长按保存这张中签海报，发到群里吧";
+  }
+
+  /* ============ 结果海报：底图 + 固定位置二维码 ============ */
+  function posterFor(period){ return (cfg.posters && cfg.posters[String(period)]) || ""; }
+
+  function applyPoster(){
+    var card = $("resPoster"), base = $("posterBase"), qr = $("posterQr");
+    var url = posterFor(cfg.period);
+    if(url){
+      card.classList.add("poster-mode");
+      base.onload = function(){
+        if(base.naturalWidth && base.naturalHeight){
+          card.style.setProperty("--p-ratio", base.naturalWidth + " / " + base.naturalHeight);
+        }
+      };
+      base.src = url; base.hidden = false;
+      card.style.setProperty("--names-top", (cfg.namesTop || 62) + "%");
+      card.style.setProperty("--qr-size", (cfg.qrSize || 22) + "%");
+    }else{
+      card.classList.remove("poster-mode");
+      base.hidden = true; base.removeAttribute("src");
+      card.style.removeProperty("--p-ratio");
+      card.style.removeProperty("--names-top");
+      card.style.removeProperty("--qr-size");
+    }
+    if(url && cfg.qr){
+      qr.className = "poster-qr pos-" + (cfg.qrPos || "br");
+      qr.src = cfg.qr; qr.hidden = false;
+    }else{
+      qr.hidden = true; qr.removeAttribute("src");
+    }
   }
 
   /* ============ 保存海报 ============ */
   function savePoster(){
-    var card = $("cardResult");
+    var card = $("resPoster");
     var btn = $("btnSave");
     if(typeof html2canvas !== "function"){ toast("截图组件未加载，请检查网络后重试"); return; }
+    var base = $("posterBase");
+    if(base && !base.hidden && !base.complete){ toast("海报加载中，请稍候再试"); return; }
     btn.textContent = "正在生成…"; btn.disabled = true;
     card.classList.add("exporting");
+    var isPoster = card.classList.contains("poster-mode");
     var prevBg = card.style.background;
-    card.style.background = "#FFFBF0";        // 导出用不透明底，保证清晰
-    html2canvas(card, { backgroundColor:"#FFFBF0", scale: Math.max(2, window.devicePixelRatio||2), useCORS:true, logging:false }).then(function(canvas){
+    if(!isPoster) card.style.background = "#FFFBF0";   // 卡片模式用不透明底；海报模式保留底图
+    html2canvas(card, { backgroundColor: isPoster ? null : "#FFFBF0", scale: Math.max(2, window.devicePixelRatio||2), useCORS:true, logging:false }).then(function(canvas){
       card.style.background = prevBg; card.classList.remove("exporting");
       btn.textContent = "长按保存结果图"; btn.disabled = false;
       var url = canvas.toDataURL("image/png");
@@ -597,6 +682,17 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
     // 封面预览
     var pv = $("coverPreview");
     if(cfg.cover){ pv.src = cfg.cover; pv.hidden=false; } else { pv.hidden = true; pv.removeAttribute("src"); }
+    // 结果海报 / 二维码
+    $("posterPeriod").textContent = cfg.period;
+    var cur = posterFor(cfg.period);
+    var pp = $("posterPreview");
+    if(cur){ pp.src = cur; pp.hidden=false; } else { pp.hidden = true; pp.removeAttribute("src"); }
+    var qp = $("qrPreview");
+    if(cfg.qr){ qp.src = cfg.qr; qp.hidden=false; } else { qp.hidden = true; qp.removeAttribute("src"); }
+    $("setQrPos").value = cfg.qrPos || "br";
+    $("setQrSize").value = cfg.qrSize || 22;
+    $("setNamesTop").value = cfg.namesTop || 62;
+    $("posterState").textContent = cur ? "本期海报已上传" : "本期未上传海报，前台结果按默认卡片样式显示";
     // 规则
     $("setPer").value = cfg.perDraw;
     $("setMax").value = cfg.maxDraws;
@@ -699,6 +795,36 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
     toast(cfg.names.length ? "设置已保存，前台可抽签" : "设置已保存，但奖池为空，请先导入名单");
   });
   $("btnGotoStage").addEventListener("click", function(){ location.hash = "#/stage"; });
+
+  // 结果海报 / 二维码
+  function pickImage(input, onDone){
+    var f = input.files && input.files[0]; if(!f) return;
+    if(!/^image\//.test(f.type || "")){ toast("请选择图片文件"); return; }
+    var fr = new FileReader();
+    fr.onload = function(){ onDone(fr.result); input.value = ""; };
+    fr.onerror = function(){ toast("图片读取失败：iPhone 的 HEIC 格式请先转成 JPG/PNG"); };
+    fr.readAsDataURL(f);
+  }
+  $("posterFile").addEventListener("change", function(e){
+    pickImage(e.target, function(url){
+      cfg.posters[String(cfg.period)] = url;
+      saveCfg(); renderAdmin(); toast("已上传第" + cfg.period + "期海报（仅本机可见）");
+    });
+  });
+  $("posterClear").addEventListener("click", function(){
+    delete cfg.posters[String(cfg.period)];
+    saveCfg(); renderAdmin(); toast("已清除第" + cfg.period + "期海报");
+  });
+  $("qrFile").addEventListener("change", function(e){
+    pickImage(e.target, function(url){ cfg.qr = url; saveCfg(); renderAdmin(); toast("二维码已更新"); });
+  });
+  $("qrClear").addEventListener("click", function(){ cfg.qr = ""; saveCfg(); renderAdmin(); toast("已清除二维码"); });
+  $("btnSavePoster").addEventListener("click", function(){
+    cfg.qrPos = $("setQrPos").value || "br";
+    cfg.qrSize = Math.max(5, Math.min(60, parseInt($("setQrSize").value, 10) || 22));
+    cfg.namesTop = Math.max(0, Math.min(96, parseInt($("setNamesTop").value, 10) || 62));
+    saveCfg(); renderAdmin(); toast("海报设置已保存");
+  });
 
   $("coverFile").addEventListener("change", function(e){
     var f = e.target.files && e.target.files[0]; if(!f) return;
