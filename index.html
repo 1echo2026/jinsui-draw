@@ -83,10 +83,11 @@ button{font-family:inherit;cursor:pointer;touch-action:manipulation}
 /* 中签名单 */
 .win-title{font-size:21px;font-weight:800;letter-spacing:.06em;color:#B37C24;margin:2px 0 4px}
 .win-title small{display:block;font-size:12px;letter-spacing:.28em;color:var(--gold-deep);font-weight:700;margin-top:6px}
-.win-grid{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin:16px 0 4px}
-.win-chip{font-size:15px;line-height:1;color:#6C5320;font-weight:700;padding:9px 13px;border-radius:11px;
-  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,240,208,.78));
-  border:1px solid rgba(214,168,92,.6);box-shadow:0 2px 6px rgba(180,130,40,.14);white-space:nowrap}
+.win-grid{display:flex;flex-wrap:wrap;gap:9px 18px;justify-content:center;margin:16px 0 4px}
+/* 中签名字：只保留文字，无方框/底色/投影；用淡白光晕保证压在任何背景上都清晰 */
+.win-chip{font-size:15px;line-height:1.2;color:#6C5320;font-weight:700;padding:2px 0;white-space:nowrap;
+  background:none;border:none;box-shadow:none;
+  text-shadow:0 1px 0 rgba(255,255,255,.92),0 0 9px rgba(255,255,255,.8)}
 .btn-main{margin-top:18px;width:100%;border:none;border-radius:14px;padding:15px 18px;font-size:17px;font-weight:800;letter-spacing:.06em;
   color:#5A3A10;background:linear-gradient(180deg,var(--orange-2),var(--orange));
   box-shadow:0 10px 22px rgba(233,140,52,.36),inset 0 1px 0 rgba(255,255,255,.6)}
@@ -103,7 +104,6 @@ body.has-bg .foot{display:none}
    一旦某个渐变元素的盒子被算成亚像素尺寸，Chrome 会抛 createPattern 报错（本次生成失败即此因），
    导出阶段统一改用纯色，彻底绕开该代码路径 */
 .card.exporting .gold-line{background:rgba(214,168,92,.55)}
-.card.exporting .win-chip{background:#FFF8E9}
 .card.exporting .btn-main{background:#FFAE5E}
 
 /* ---------- 弹层 ---------- */
@@ -158,7 +158,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
   -webkit-backdrop-filter:none;backdrop-filter:none;aspect-ratio:var(--p-ratio,3 / 5.33)}
 #resPoster.poster-mode .win-title,#resPoster.poster-mode .gold-line{display:none}
 #resPoster.poster-mode .win-grid{position:absolute;left:0;right:0;top:var(--names-top,62%);margin:0;z-index:2;padding:0 12px}
-#resPoster.poster-mode .win-chip{background:rgba(255,251,240,.94);border-color:rgba(214,168,92,.75)}
+#resPoster.poster-mode .win-chip{color:#5A3F12;text-shadow:0 1px 0 rgba(255,255,255,.95),0 0 10px rgba(255,255,255,.9),0 0 2px rgba(255,255,255,.95)}
 .poster-qr{position:absolute;width:var(--qr-size,22%);height:auto;z-index:3;display:block;
   background:#fff;border-radius:8px;padding:3px;box-shadow:0 4px 14px rgba(80,50,10,.18)}
 .poster-qr.pos-br{right:var(--qr-margin,4%);bottom:var(--qr-margin,4%)}
@@ -199,7 +199,7 @@ textarea.inp{min-height:130px;text-align:left;font-size:16px;letter-spacing:0;re
 }
 @media (max-width:360px){
   .card-title{font-size:29px}
-  .win-chip{font-size:14px;padding:8px 11px}
+  .win-chip{font-size:14px}
   .card{padding:18px 15px calc(18px + env(safe-area-inset-bottom))}
 }
 @media (max-height:660px){
